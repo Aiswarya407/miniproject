@@ -1,0 +1,6 @@
+train: D:\mini_coco\custom_dataset\images\train
+val: D:\mini_coco\custom_dataset\images\val
+test: D:\mini_coco\custom_dataset\images\test
+
+nc: 3  # Number of classes
+names: ['concrete', 'metal', 'plastic']  # Class names
