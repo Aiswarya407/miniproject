@@ -83,5 +83,5 @@ def detect_and_classify(image_path):
 
 # Example usage
 if __name__ == "__main__":
-    image_path = r'D:\mini_coco\testimages\runway1_test.png'  # Replace with the path to your image
+    image_path = r'D:\mini_coco\testimages\plastic2.jpg'  # Replace with the path to your image
     detect_and_classify(image_path)
