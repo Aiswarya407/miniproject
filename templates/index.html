@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automated Object Detection and Material Classification</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f0f2f5;
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        form {
+            background-color: #fff;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .results {
+            background-color: #fff;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 400px;
+            margin-top: 20px;
+        }
+    </style>
+    <script>
+        function handleImageUpload(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            fetch('/upload_image', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.high_risk_detected) {
+                    const details = data.high_risk_details.map(detail => `${detail.class_name} (${detail.confidence.toFixed(2)})`).join(', ');
+                    alert(`High Risk Detected: ${details}`);
+                    playAlert();
+                }
+                const img = document.createElement('img');
+                img.src = 'data:image/jpeg;base64,' + data.image;
+                document.getElementById('result').innerHTML = '';
+                document.getElementById('result').appendChild(img);
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function stopAlert() {
+            fetch('/stop_alarm', {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.status);
+                const alertSound = document.getElementById('alert-sound');
+                alertSound.pause();
+                alertSound.currentTime = 0;
+                document.getElementById('stop-alert').style.display = 'none';
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function playAlert() {
+            const alertSound = document.getElementById('alert-sound');
+            alertSound.play();
+            document.getElementById('stop-alert').style.display = 'block';
+        }
+
+        document.getElementById('stop-alert').addEventListener('click', stopAlert);
+    </script>
+</head>
+<body>
+    <h1>Object Detection and Material Classification</h1>
+
+    <form onsubmit="handleImageUpload(event)" enctype="multipart/form-data">
+        <h2>Upload Image</h2>
+        <input type="file" name="image" accept="image/*">
+        <button type="submit">Upload Image</button>
+    </form>
+
+    <form action="/upload_video" method="post" enctype="multipart/form-data">
+        <h2>Upload Video</h2>
+        <input type="file" name="video" accept="video/*">
+        <button type="submit">Upload Video</button>
+    </form>
+
+    <h2>Real-Time Video</h2>
+    <a href="/video_feed">Start Real-Time Video</a>
+    <div>
+        <img src="{{ url_for('video_feed') }}" width="100%">
+    </div>
+
+    <div class="results" id="detection-results">
+        <h2>Detection Results</h2>
+        <div id="result"></div>
+        <button id="stop-alert" style="display:none; background-color:#f44336;">Stop Alert</button>
+    </div>
+
+    <audio id="alert-sound" src="alert.mp3"></audio>
+</body>
+</html>
