@@ -5,7 +5,7 @@ def train_material_model():
     model = YOLO('yolov8n.pt')  # You can start with a pre-trained model
 
     # Train the model with the custom dataset
-    model.train(data='custom_dataset.yaml', epochs=100, imgsz=640)
+    model.train(data='custom_dataset.yaml', epochs=20, imgsz=640)
 
     # Save the trained model
     model.save('best.pt')
