@@ -3,18 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Automated Object Detection and Material Classification</title>
+    <title>Automated Object Detection and Classification</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Times New Roman', Times, serif;
+            background: linear-gradient(to right, #d4fc79, #96e6a1);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .container {
+            background-color: #f0f2f5;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 80%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: row;
+            overflow: hidden;
+        }
+        .left-panel, .right-panel {
+            padding: 20px;
+        }
+        .left-panel {
+            flex: 2;
+            background-color: #fff;
             display: flex;
             flex-direction: column;
             align-items: center;
-            background-color: #f0f2f5;
-            padding: 20px;
         }
-        h1, h2 {
+        .right-panel {
+            flex: 1;
+            background-color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
             color: #333;
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: #555;
+            margin-bottom: 20px;
         }
         form {
             background-color: #fff;
@@ -45,6 +80,60 @@
             max-width: 400px;
             margin-top: 20px;
         }
+        .live-feed {
+            width: 100%;
+            height: 400px;
+            background-color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .upload-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .upload-section input[type="file"] {
+            margin-bottom: 10px;
+        }
+        .upload-section button {
+            margin-bottom: 20px;
+        }
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .nav-tabs a {
+            padding: 10px 20px;
+            margin: 0 5px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .nav-tabs a.active {
+            background-color: #0056b3;
+        }
+        .user-icon {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            align-items: center;
+        }
+        .user-icon img {
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            margin-right: 10px;
+        }
+        .user-icon span {
+            color: #333;
+        }
     </style>
     <script>
         function handleImageUpload(event) {
@@ -56,15 +145,50 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.high_risk_detected) {
-                    const details = data.high_risk_details.map(detail => `${detail.class_name} (${detail.confidence.toFixed(2)})`).join(', ');
-                    alert(`High Risk Detected: ${details}`);
-                    playAlert();
-                }
                 const img = document.createElement('img');
                 img.src = 'data:image/jpeg;base64,' + data.image;
-                document.getElementById('result').innerHTML = '';
-                document.getElementById('result').appendChild(img);
+                const resultWindow = window.open('', '_blank');
+                resultWindow.document.write('<html><head><title>Detection Result</title></head><body>');
+                resultWindow.document.write('<h2>Detection Result</h2>');
+                resultWindow.document.write('<div>' + img.outerHTML + '</div>');
+                if (data.high_risk_detected) {
+                    const details = data.high_risk_details.map(detail => `${detail.class_name} (${detail.confidence.toFixed(2)})`).join(', ');
+                    resultWindow.document.write('<h3>High Risk Details</h3>');
+                    resultWindow.document.write('<p>' + details + '</p>');
+                    playAlert();
+                }
+                resultWindow.document.write('<button id="stop-alert" style="display:none; background-color:#f44336;">Stop Alert</button>');
+                resultWindow.document.write('</body></html>');
+                resultWindow.document.getElementById('stop-alert').addEventListener('click', stopAlert);
+            })
+            .catch(error => console.error('Error:', error));
+        }
+
+        function handleVideoUpload(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            fetch('/upload_video', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const video = document.createElement('video');
+                video.src = 'data:video/mp4;base64,' + data.video;
+                video.controls = true;
+                const resultWindow = window.open('', '_blank');
+                resultWindow.document.write('<html><head><title>Detection Result</title></head><body>');
+                resultWindow.document.write('<h2>Detection Result</h2>');
+                resultWindow.document.write('<div>' + video.outerHTML + '</div>');
+                if (data.high_risk_detected) {
+                    const details = data.high_risk_details.map(detail => `${detail.class_name} (${detail.confidence.toFixed(2)})`).join(', ');
+                    resultWindow.document.write('<h3>High Risk Details</h3>');
+                    resultWindow.document.write('<p>' + details + '</p>');
+                    playAlert();
+                }
+                resultWindow.document.write('<button id="stop-alert" style="display:none; background-color:#f44336;">Stop Alert</button>');
+                resultWindow.document.write('</body></html>');
+                resultWindow.document.getElementById('stop-alert').addEventListener('click', stopAlert);
             })
             .catch(error => console.error('Error:', error));
         }
@@ -90,36 +214,47 @@
             document.getElementById('stop-alert').style.display = 'block';
         }
 
-        document.getElementById('stop-alert').addEventListener('click', stopAlert);
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('stop-alert').addEventListener('click', stopAlert);
+        });
     </script>
 </head>
 <body>
-    <h1>Object Detection and Material Classification</h1>
-
-    <form onsubmit="handleImageUpload(event)" enctype="multipart/form-data">
-        <h2>Upload Image</h2>
-        <input type="file" name="image" accept="image/*">
-        <button type="submit">Upload Image</button>
-    </form>
-
-    <form action="/upload_video" method="post" enctype="multipart/form-data">
-        <h2>Upload Video</h2>
-        <input type="file" name="video" accept="video/*">
-        <button type="submit">Upload Video</button>
-    </form>
-
-    <h2>Real-Time Video</h2>
-    <a href="/video_feed">Start Real-Time Video</a>
-    <div>
-        <img src="{{ url_for('video_feed') }}" width="100%">
+    <div class="user-icon">
+        <img src="{{ url_for('static', filename='user-icon.png') }}" alt="User Icon">
+        <span>user</span>
     </div>
-
-    <div class="results" id="detection-results">
-        <h2>Detection Results</h2>
-        <div id="result"></div>
-        <button id="stop-alert" style="display:none; background-color:#f44336;">Stop Alert</button>
+    <div class="container">
+        <div class="left-panel">
+            <h1>Automated Object Detection and Classification</h1>
+            <p>Empowering airport safety with cutting-edge technology</p>
+            <div class="nav-tabs">
+                <a href="#" class="active">Live</a>
+            </div>
+            <div class="live-feed">
+                <img src="{{ url_for('video_feed') }}" alt="Live Feed">
+            </div>
+        </div>
+        <div class="right-panel">
+            <div class="upload-section">
+                <h2>Upload Image</h2>
+                <form onsubmit="handleImageUpload(event)" enctype="multipart/form-data">
+                    <input type="file" name="image" accept="image/*">
+                    <button type="submit">Upload Image</button>
+                </form>
+                <h2>Upload Video</h2>
+                <form onsubmit="handleVideoUpload(event)" enctype="multipart/form-data">
+                    <input type="file" name="video" accept="video/*">
+                    <button type="submit">Upload Video</button>
+                </form>
+            </div>
+            <div class="results" id="detection-results">
+                <h2>Detection Results</h2>
+                <div id="result"></div>
+                <button id="stop-alert" style="display:none; background-color:#f44336;">Stop Alert</button>
+            </div>
+        </div>
     </div>
-
     <audio id="alert-sound" src="alert.mp3"></audio>
 </body>
 </html>

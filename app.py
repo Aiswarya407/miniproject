@@ -33,6 +33,7 @@ no_risk_classes = list(range(0, 9)) + list(range(46, 56))
 
 ALERT_SOUND_PATH = r"D:\mini_coco\alert.mp3"
 alarm_thread = None
+alarm_thread_stop_event = threading.Event()
 
 def classify_risk(class_name, material_class_name):
     if class_name in high_risk_coco_classes or material_class_name == 'metal':
@@ -43,13 +44,15 @@ def classify_risk(class_name, material_class_name):
         return 'Low Risk'
 
 def play_alarm():
-    playsound(ALERT_SOUND_PATH)
+    while not alarm_thread_stop_event.is_set():
+        playsound(ALERT_SOUND_PATH)
 
 def stop_alarm():
     global alarm_thread
     if alarm_thread and alarm_thread.is_alive():
-        alarm_thread.do_run = False
+        alarm_thread_stop_event.set()
         alarm_thread.join()
+        alarm_thread_stop_event.clear()
 
 def detect_and_classify(image_path):
     # Run object detection using the COCO model
@@ -96,8 +99,9 @@ def detect_and_classify(image_path):
             high_risk_detected = True
             high_risk_details.append({'class_name': class_name, 'confidence': conf})
             global alarm_thread
-            alarm_thread = threading.Thread(target=play_alarm)
-            alarm_thread.start()
+            if not alarm_thread or not alarm_thread.is_alive():
+                alarm_thread = threading.Thread(target=play_alarm)
+                alarm_thread.start()
         
         if risk_level != 'No Risk':
             ax.text(x1, y2 + 20, f'Risk: {risk_level}', color='white', fontsize=12, bbox=dict(facecolor='green', alpha=0.5))
@@ -167,8 +171,9 @@ def process_frame(frame):
     material_detections = detect_material(image)
 
     # Match results using IoU and annotate the image
+    image_np = np.array(image)
     fig, ax = plt.subplots(figsize=(12, 8))
-    ax.imshow(image)
+    ax.imshow(image_np)
 
     high_risk_detected = False
 
@@ -200,7 +205,10 @@ def process_frame(frame):
         
         if risk_level == 'High Risk':
             high_risk_detected = True
-            playsound(ALERT_SOUND_PATH)
+            global alarm_thread
+            if not alarm_thread or not alarm_thread.is_alive():
+                alarm_thread = threading.Thread(target=play_alarm)
+                alarm_thread.start()
         
         if risk_level != 'No Risk':
             ax.text(x1, y2 + 20, f'Risk: {risk_level}', color='white', fontsize=12, bbox=dict(facecolor='green', alpha=0.5))
@@ -218,13 +226,6 @@ def gen_frames(video_path=None):
     if video_path:
         cap = cv2.VideoCapture(video_path)  # Use the video file path
     else:
-        cap = cv2.VideoCapture(0)  # Use 0 for webcam
-
-    while True:
-        success, frame = cap.read()
-        if not success:
-             break
-        else:
             processed_frame = process_frame(frame)
             frame = cv2.imdecode(np.frombuffer(processed_frame, np.uint8), cv2.IMREAD_COLOR)
             ret, buffer = cv2.imencode('.jpg', frame)
@@ -240,4 +241,4 @@ def video_feed():
     return Response(gen_frames(video_path), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == "__main__":
-    app.run(debug=True) 
+    app.run(debug=True)
