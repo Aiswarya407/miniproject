@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, Response, jsonify
+from flask import Flask, render_template, request, redirect, url_for, Response, send_file, jsonify
 import cv2
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
@@ -11,14 +11,11 @@ from scripts.detect_material import detect_material
 from utils.calculate_iou import calculate_iou
 from models.coco_model import coco_model
 from models.material_model import material_model
+from playsound import playsound
 import base64
 import threading
-import pygame
 
 app = Flask(__name__)
-
-# Initialize pygame mixer
-pygame.mixer.init()
 
 # Define the material classes for the custom model
 material_classes = ['concrete', 'metal', 'plastic']
@@ -28,7 +25,7 @@ excluded_classes = list(range(0, 24)) + list(range(46, 55)) + [64]
 
 # Define high-risk COCO classes (including all animals)
 high_risk_coco_classes = [
-    'bird', 'cat', 'dog', 'horse', 'sheep', 'cow'
+    'bird', 'cat', 'dog', 'horse', 'sheep', 'cow', 'elephant', 'bear', 'zebra', 'giraffe'
 ]
 
 # Define classes to exclude from risk assignment
@@ -48,12 +45,7 @@ def classify_risk(class_name, material_class_name):
 
 def play_alarm():
     while not alarm_thread_stop_event.is_set():
-        pygame.mixer.music.load(ALERT_SOUND_PATH)
-        pygame.mixer.music.play(-1)
-        while pygame.mixer.music.get_busy():
-            if alarm_thread_stop_event.is_set():
-                pygame.mixer.music.stop()
-                break
+        playsound(ALERT_SOUND_PATH)
 
 def stop_alarm():
     global alarm_thread
@@ -234,13 +226,6 @@ def gen_frames(video_path=None):
     if video_path:
         cap = cv2.VideoCapture(video_path)  # Use the video file path
     else:
-        cap = cv2.VideoCapture(0)  # Use 0 for webcam
-
-    while True:
-        success, frame = cap.read()
-        if not success:
-            break
-        else:
             processed_frame = process_frame(frame)
             frame = cv2.imdecode(np.frombuffer(processed_frame, np.uint8), cv2.IMREAD_COLOR)
             ret, buffer = cv2.imencode('.jpg', frame)

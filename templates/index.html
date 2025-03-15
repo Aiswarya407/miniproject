@@ -171,24 +171,10 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
-            .then(data => {
-                const video = document.createElement('video');
-                video.src = 'data:video/mp4;base64,' + data.video;
-                video.controls = true;
-                const resultWindow = window.open('', '_blank');
-                resultWindow.document.write('<html><head><title>Detection Result</title></head><body>');
-                resultWindow.document.write('<h2>Detection Result</h2>');
-                resultWindow.document.write('<div>' + video.outerHTML + '</div>');
-                if (data.high_risk_detected) {
-                    const details = data.high_risk_details.map(detail => `${detail.class_name} (${detail.confidence.toFixed(2)})`).join(', ');
-                    resultWindow.document.write('<h3>High Risk Details</h3>');
-                    resultWindow.document.write('<p>' + details + '</p>');
-                    playAlert();
+            .then(response => {
+                if (response.redirected) {
+                    window.location.href = response.url;
                 }
-                resultWindow.document.write('<button id="stop-alert" style="display:none; background-color:#f44336;">Stop Alert</button>');
-                resultWindow.document.write('</body></html>');
-                resultWindow.document.getElementById('stop-alert').addEventListener('click', stopAlert);
             })
             .catch(error => console.error('Error:', error));
         }
