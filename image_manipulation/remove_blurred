@@ -1,0 +1,36 @@
+import cv2
+import os
+import shutil
+
+# Paths
+input_images_folder = r"D:\mini_coco\screw_output\images"   # Folder with images
+input_labels_folder = r"D:\mini_coco\screw_output\labels"   # Folder with annotations
+output_blurry_folder = r"D:\mini_coco\screw_output\blurred_images"  # Backup folder for blurred images
+output_blurry_labels = r"D:\mini_coco\screw_output\blurred_labels"  # Backup for their labels
+
+os.makedirs(output_blurry_folder, exist_ok=True)
+os.makedirs(output_blurry_labels, exist_ok=True)
+
+# Function to check if an image is blurry
+def is_blurry(image_path, threshold=100):  # Adjust threshold if needed
+    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+    if image is None:
+        return True
+    laplacian_var = cv2.Laplacian(image, cv2.CV_64F).var()
+    return laplacian_var < threshold  # True if blurry
+
+# Loop through images and check blur
+for filename in os.listdir(input_images_folder):
+    if filename.endswith((".jpg", ".png", ".jpeg")):
+        image_path = os.path.join(input_images_folder, filename)
+        label_path = os.path.join(input_labels_folder, filename.replace('.jpg', '.txt').replace('.png', '.txt'))
+
+        if is_blurry(image_path):
+            # Move image and annotation file
+            shutil.move(image_path, os.path.join(output_blurry_folder, filename))
+            if os.path.exists(label_path):
+                shutil.move(label_path, os.path.join(output_blurry_labels, os.path.basename(label_path)))
+
+            print(f"🔹 Removed blurry image & label: {filename}")
+
+print("✅ Blurry image removal complete!")
