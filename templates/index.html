@@ -3,244 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Automated Object Detection and Classification</title>
+    <title>AeroGuard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
         body {
             font-family: 'Times New Roman', Times, serif;
-            background: linear-gradient(to right, #d4fc79, #96e6a1);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
         }
-        .container {
-            background-color: #f0f2f5;
+        .main-section {
+            display: flex;
+            align-items: flex-start; /* Align items to the top */
+            justify-content: space-between;
+            padding: 50px 20px;
+            background: linear-gradient(90deg, #cdffd8, #94b9ff); /* Linear gradient background */
+        }
+        .main-section .content {
+            max-width: 50%;
+            color: black;
+        }
+        .main-section .image {
+            max-width: 45%;
+        }
+        .main-section .image img {
+            width: 100%;
+            height: auto;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            width: 80%;
-            max-width: 1200px;
-            display: flex;
-            flex-direction: row;
-            overflow: hidden;
         }
-        .left-panel, .right-panel {
-            padding: 20px;
+        .highlight {
+            color: #007bff;
         }
-        .left-panel {
-            flex: 2;
-            background-color: #fff;
+        .upload-section {
+            padding: 60px; /* Increase padding to make the container larger */
+            border-radius: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            height: 500px; /* Adjust height as needed */
+            position: relative;
+            width: 80%; /* Increase width */
+            background: url('{{ url_for('static', filename='airport-upload-file-bg.jpg') }}') no-repeat center center; /* Background image */
+            background-size: cover;
         }
-        .right-panel {
-            flex: 1;
-            background-color: #e0e0e0;
+        .upload-section img {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 250px;
+            height: auto;
+        }
+        .upload-label {
             display: flex;
-            flex-direction: column;
             align-items: center;
-        }
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-        h2 {
-            color: #555;
+            justify-content: center;
             margin-bottom: 20px;
         }
-        form {
-            background-color: #fff;
-            padding: 15px 20px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
+        .upload-label input {
+            display: none;
         }
-        button {
-            background-color: #4CAF50;
+        .upload-label span {
+            background-color: #ff69b4;
             color: white;
-            border: none;
             padding: 10px 20px;
             border-radius: 5px;
             cursor: pointer;
+            margin-right: 10px;
+            border: none; /* Remove blue border */
         }
-        button:hover {
-            background-color: #45a049;
+        .btn-primary {
+            background-color: #0000ff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
-        .results {
-            background-color: #fff;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
+        .btn-primary:hover {
+            background-color: #0000cc;
+        }
+        .detection-result {
+            background-color: #f0f0f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            width: 100%; /* Make the container bigger */
+            height: 600px; /* Adjust height as needed */
+        }
+        .detection-result img {
             width: 100%;
-            max-width: 400px;
+            height: auto;
+            border-radius: 10px;
+        }
+        .back-button {
+            background-color: #0000ff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
             margin-top: 20px;
         }
-        .live-feed {
-            width: 100%;
-            height: 400px;
-            background-color: #333;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-size: 24px;
+        .back-button:hover {
+            background-color: #0000cc;
+        }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgb(0,0,0); /* Fallback color */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 15% auto; /* 15% from the top and centered */
+            padding: 20px;
+            border: 1px solid #888;
+            width: 50%; /* Smaller width */
+            max-width: 600px; /* Maximum width */
+            border-radius: 10px;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
             font-weight: bold;
         }
-        .upload-section {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .upload-section input[type="file"] {
-            margin-bottom: 10px;
-        }
-        .upload-section button {
-            margin-bottom: 20px;
-        }
-        .nav-tabs {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-        .nav-tabs a {
-            padding: 10px 20px;
-            margin: 0 5px;
-            background-color: #007bff;
-            color: white;
+        .close:hover,
+        .close:focus {
+            color: black;
             text-decoration: none;
-            border-radius: 5px;
+            cursor: pointer;
         }
-        .nav-tabs a.active {
-            background-color: #0056b3;
-        }
-        .user-icon {
-            position: absolute;
-            top: 20px;
-            right: 20px;
+        .upload-buttons {
             display: flex;
-            align-items: center;
+            flex-direction: column; /* Align buttons vertically */
+            gap: 10px; /* Add space between buttons */
+            width: 100%;
+            max-width: 400px;
         }
-        .user-icon img {
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            margin-right: 10px;
-        }
-        .user-icon span {
-            color: #333;
+        .gradient-container {
+            background: linear-gradient(90deg, #cdffd8, #94b9ff); /* Linear gradient background */
+            padding: 20px;
+            border-radius: 10px;
         }
     </style>
-    <script>
-        function handleImageUpload(event) {
-            event.preventDefault();
-            const formData = new FormData(event.target);
-            fetch('/upload_image', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                const img = document.createElement('img');
-                img.src = 'data:image/jpeg;base64,' + data.image;
-                const resultWindow = window.open('', '_blank');
-                resultWindow.document.write('<html><head><title>Detection Result</title></head><body>');
-                resultWindow.document.write('<h2>Detection Result</h2>');
-                resultWindow.document.write('<div>' + img.outerHTML + '</div>');
-                if (data.high_risk_detected) {
-                    const details = data.high_risk_details.map(detail => `${detail.class_name} (${detail.confidence.toFixed(2)})`).join(', ');
-                    resultWindow.document.write('<h3>High Risk Details</h3>');
-                    resultWindow.document.write('<p>' + details + '</p>');
-                    playAlert();
-                }
-                resultWindow.document.write('<button id="stop-alert" style="display:none; background-color:#f44336;">Stop Alert</button>');
-                resultWindow.document.write('</body></html>');
-                resultWindow.document.getElementById('stop-alert').addEventListener('click', stopAlert);
-            })
-            .catch(error => console.error('Error:', error));
-        }
-
-        function handleVideoUpload(event) {
-            event.preventDefault();
-            const formData = new FormData(event.target);
-            fetch('/upload_video', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => {
-                if (response.redirected) {
-                    window.location.href = response.url;
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        }
-
-        function stopAlert() {
-            fetch('/stop_alarm', {
-                method: 'POST'
-            })
-            .then(response => response.json())
-            .then(data => {
-                alert(data.status);
-                const alertSound = document.getElementById('alert-sound');
-                alertSound.pause();
-                alertSound.currentTime = 0;
-                document.getElementById('stop-alert').style.display = 'none';
-            })
-            .catch(error => console.error('Error:', error));
-        }
-
-        function playAlert() {
-            const alertSound = document.getElementById('alert-sound');
-            alertSound.play();
-            document.getElementById('stop-alert').style.display = 'block';
-        }
-
-        document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('stop-alert').addEventListener('click', stopAlert);
-        });
-    </script>
 </head>
 <body>
-    <div class="user-icon">
-        <img src="{{ url_for('static', filename='user-icon.png') }}" alt="User Icon">
-        <span>user</span>
+    <div class="navbar">
+        <div class="logo"><span class="aeroguard-font">AeroGuard</span></div>
+        <div class="user-profile">
+            <img src="{{ url_for('static', filename='user-icon.png') }}" alt="User">
+            <span>User</span>
+        </div>
     </div>
-    <div class="container">
-        <div class="left-panel">
-            <h1>Automated Object Detection and Classification</h1>
-            <p>Empowering airport safety with cutting-edge technology</p>
-            <div class="nav-tabs">
-                <a href="#" class="active">Live</a>
-            </div>
-            <div class="live-feed">
-                <img src="{{ url_for('video_feed') }}" alt="Live Feed">
+    
+    <div class="main-section">
+        <div class="content">
+            <h1><span class="highlight">Real-Time</span> FOD and <span class="highlight">Bird Detection</span> System</h1>
+            <p>AeroGuard provides cutting-edge solutions for enhanced airfield safety. Our AI-powered system delivers real-time detection of FOD (Foreign Object Debris) and bird hazards, minimizing risks and ensuring safer operations for airports, military bases, and private airstrips.</p>
+            <div class="left-panel">
+                <h2>Live Feed</h2>
+                <div class="live-feed">
+                    <img src="{{ url_for('video_feed') }}" alt="Live Video Feed">
+                </div>
             </div>
         </div>
-        <div class="right-panel">
+        <div class="image">
+            <img src="{{ url_for('static', filename='airport-runway.jpg') }}" alt="Airport Runway">
+        </div>
+    </div>
+
+    <div class="gradient-container">
+        <div class="container">
+            <!-- Upload Section -->
             <div class="upload-section">
-                <h2>Upload Image</h2>
-                <form onsubmit="handleImageUpload(event)" enctype="multipart/form-data">
-                    <input type="file" name="image" accept="image/*">
-                    <button type="submit">Upload Image</button>
-                </form>
-                <h2>Upload Video</h2>
-                <form onsubmit="handleVideoUpload(event)" enctype="multipart/form-data">
-                    <input type="file" name="video" accept="video/*">
-                    <button type="submit">Upload Video</button>
-                </form>
+                <h2>Upload Files and Try</h2>
+                <div class="upload-buttons">
+                    <form onsubmit="handleImageUpload(event)" enctype="multipart/form-data">
+                        <label class="upload-label">
+                            <input type="file" name="image" accept="image/*">
+                            <span>Choose Image</span>
+                        </label>
+                        <button type="submit" class="btn-primary">Upload Image</button>
+                    </form>
+                </div>
+                <div class="upload-buttons">
+                    <form onsubmit="handleVideoUpload(event)" enctype="multipart/form-data">
+                        <label class="upload-label">
+                            <input type="file" name="video" accept="video/*">
+                            <span>Choose Video</span>
+                        </label>
+                        <button type="submit" class="btn-primary">Upload Video</button>
+                    </form>
+                </div>
+                <img src="{{ url_for('static', filename='airplane.png') }}" alt="Airplane">
             </div>
-            <div class="results" id="detection-results">
+
+            <!-- System Status Section -->
+            <div class="detection-result">
                 <h2>Detection Results</h2>
-                <div id="result"></div>
-                <button id="stop-alert" style="display:none; background-color:#f44336;">Stop Alert</button>
+                <div class="result-box" id="detection-results">
+                    <img src="{{ url_for('static', filename='detection-result.jpg') }}" alt="Detection Result">
+                </div>
+                <button class="back-button" onclick="goBack()">Back</button>
             </div>
         </div>
     </div>
-    <audio id="alert-sound" src="alert.mp3"></audio>
+
+    <audio id="alert-sound" src="{{ url_for('static', filename='alert.mp3') }}"></audio>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        function goBack() {
+            window.location.href = '/';
+        }
+
+        function closeModal() {
+            document.getElementById('resultModal').style.display = 'none';
+        }
+    </script>
 </body>
 </html>
